@@ -1,0 +1,68 @@
+# 🐍 Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+*.sqlite3
+*.db
+
+# 📦 Entorno virtual
+env/
+.env
+.env.*
+env
+
+# 🧪 Pytest y cobertura
+htmlcov/
+.coverage
+.cache/
+.pytest_cache/
+
+# 🖥️ PySide6 / Qt
+*.qrc
+*.ui
+*.pyc
+*.bak
+*.tmp
+*.swp
+
+# 📄 Documentación y exportables
+*.pdf
+*.md~
+*.DS_Store
+*.docx
+
+# 🐘 MySQL dumps
+*.sql
+*.dump
+
+# 📦 Paquetes y binarios
+*.tar.gz
+*.whl
+
+# 🧙‍♂️ PyInstaller (si empaquetas como .exe)
+*.spec
+*.exe
+*.dll
+*.app
+*.dmg
+
+# 📸 Reflex (si decides usarlo en paralelo)
+.reflex/
+reflex.json
+
+# 🧠 VSCode / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# 🔧 Githooks personalizados
+.githooks/
+
+replace.txt
