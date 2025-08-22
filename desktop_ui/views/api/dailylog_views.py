@@ -4,11 +4,13 @@ from drf_spectacular.utils import extend_schema_view, extend_schema
 from desktop_ui.models import DailyLog
 from desktop_ui.serializers import DailyLogSerializer
 
+# 🔧 Paginación personalizada
 class DailyLogPagination(PageNumberPagination):
     page_size = 10
-    page_size_query_param = 'page_size'
+    page_size_query_param = "page_size"
     max_page_size = 100
 
+# 📋 Vista para listar y crear tareas
 @extend_schema_view(
     get=extend_schema(
         summary="Listar tareas diarias",
@@ -28,13 +30,13 @@ class DailyLogListCreateAPIView(
     mixins.CreateModelMixin,
     generics.GenericAPIView
 ):
-    queryset = DailyLog.objects.all().order_by('-fecha_creacion')
+    queryset = DailyLog.objects.all().order_by("fecha_creacion")
     serializer_class = DailyLogSerializer
     pagination_class = DailyLogPagination
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['nombre_tarea', 'descripcion', 'tecnologias_utilizadas']
-    ordering_fields = ['fecha_creacion', 'horas']
+    search_fields = ["nombre_tarea", "descripcion", "tecnologias_utilizadas"]
+    ordering_fields = ["fecha_creacion", "horas"]
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -42,6 +44,7 @@ class DailyLogListCreateAPIView(
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+# 📌 Vista para detalle, actualización y eliminación
 @extend_schema_view(
     get=extend_schema(
         summary="Ver detalle de tarea diaria",
@@ -54,6 +57,12 @@ class DailyLogListCreateAPIView(
         description="Modifica los datos de una tarea existente, incluyendo descripción, links e imágenes.",
         tags=["DailyLog"],
         operation_id="dailylog_update",
+    ),
+    patch=extend_schema(
+        summary="Actualizar parcialmente tarea diaria",
+        description="Modifica uno o más campos de una tarea existente sin reemplazar el registro completo.",
+        tags=["DailyLog"],
+        operation_id="dailylog_partial_update",
     ),
     delete=extend_schema(
         summary="Eliminar tarea diaria",
@@ -77,6 +86,9 @@ class DailyLogDetailAPIView(
 
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

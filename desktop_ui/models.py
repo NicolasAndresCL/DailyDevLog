@@ -20,7 +20,7 @@ class DailyLog(models.Model):
     link_ia_secundaria = models.URLField(blank=True, null=True)
     link_ia_terciaria = models.URLField(blank=True, null=True)
     link_respositorio = models.URLField(blank=True, null=True)
-    commit_principal = models.CharField(max_length=40, blank=True, null=True)
+    commit_principal = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return f"{self.nombre_tarea} ({self.fecha_creacion.date()})"

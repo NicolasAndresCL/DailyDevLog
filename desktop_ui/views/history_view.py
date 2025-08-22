@@ -1,23 +1,27 @@
+import httpx
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
     QLineEdit, QPushButton, QLabel, QHBoxLayout, QMessageBox, QInputDialog
 )
 from PySide6.QtGui import QPixmap, QDesktopServices
 from PySide6.QtCore import QUrl, QSize
-import httpx
 from desktop_ui.export.markdown_exporter import exportar_a_markdown
 
+API_URL = "http://localhost:8000/api/dailylog/"
 MEDIA_URL = "http://localhost:8000/media/"
 
 class HistoryView(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Historial de tareas")
+        self.setWindowTitle("📂 Historial de tareas")
         self.setMinimumSize(1300, 700)
-
         self.page = 1
         self.search_term = ""
 
+        self._init_ui()
+        self.cargar_datos()
+
+    def _init_ui(self):
         layout = QVBoxLayout()
 
         # Filtro de búsqueda
@@ -26,20 +30,13 @@ class HistoryView(QWidget):
         self.search_input.setPlaceholderText("Buscar por tecnología o descripción...")
         self.search_btn = QPushButton("Buscar")
         self.search_btn.clicked.connect(self.buscar)
-
         search_layout.addWidget(QLabel("Filtro:"))
         search_layout.addWidget(self.search_input)
         search_layout.addWidget(self.search_btn)
         layout.addLayout(search_layout)
 
-        # Tabla con columnas extendidas
-        self.table = QTableWidget()
-        self.table.setColumnCount(12)
-        self.table.setHorizontalHeaderLabels([
-            "Fecha", "Tarea", "Horas", "Tecnologías", "Descripción",
-            "Imagen 1", "Imagen 2", "Imagen 3",
-            "Estado", "Exportar", "Publicar", "IA Principal"
-        ])
+        # Tabla
+        self.table = self._build_table()
         layout.addWidget(self.table)
 
         # Paginación
@@ -53,7 +50,16 @@ class HistoryView(QWidget):
         layout.addLayout(pagination_layout)
 
         self.setLayout(layout)
-        self.cargar_datos()
+
+    def _build_table(self):
+        table = QTableWidget()
+        table.setColumnCount(12)
+        table.setHorizontalHeaderLabels([
+            "Fecha", "Tarea", "Horas", "Tecnologías", "Descripción",
+            "Imagen 1", "Imagen 2", "Imagen 3",
+            "Estado", "Exportar", "Publicar", "IA Principal"
+        ])
+        return table
 
     def cargar_datos(self):
         params = {
@@ -62,7 +68,7 @@ class HistoryView(QWidget):
             "ordering": "-fecha_creacion"
         }
         try:
-            response = httpx.get("http://localhost:8000/api/dailylog/", params=params)
+            response = httpx.get(API_URL, params=params)
             if response.status_code == 200:
                 data = response.json()
                 self.mostrar_resultados(data.get("results", []))
@@ -88,9 +94,12 @@ class HistoryView(QWidget):
                 if url:
                     try:
                         pixmap = QPixmap()
-                        pixmap.loadFromData(httpx.get(url).content)
-                        label.setPixmap(pixmap.scaled(100, 100))
-                    except Exception as e:
+                        response = httpx.get(url)
+                        if response.status_code == 200 and pixmap.loadFromData(response.content):
+                                label.setPixmap(pixmap.scaled(100, 100))
+                        else:
+                                label.setText("Sin imagen")
+                    except Exception:
                         label.setText("Error")
                 self.table.setCellWidget(i, j, label)
 
@@ -117,9 +126,10 @@ class HistoryView(QWidget):
         nuevo_link, ok = QInputDialog.getText(self, "Añadir publicación", "Pega el link de LinkedIn:")
         if ok and nuevo_link:
             try:
-                response = httpx.put(
-                    f"http://localhost:8000/api/dailylog/{log['id']}/",
-                    json={"link_publicacion_linkedin": nuevo_link}
+                # Usamos PATCH para actualizar solo el campo necesario
+                response = httpx.patch(
+                    f"{API_URL}{log['id']}/",
+                    data={"link_publicacion_linkedin": nuevo_link}
                 )
                 if response.status_code == 200:
                     QMessageBox.information(self, "Actualizado", "Link de publicación añadido correctamente.")
@@ -128,6 +138,7 @@ class HistoryView(QWidget):
                     QMessageBox.warning(self, "Error", f"No se pudo actualizar:\n{response.text}")
             except Exception as e:
                 QMessageBox.critical(self, "Error de conexión", str(e))
+
 
     def abrir_url(self, url):
         if url:
