@@ -1,17 +1,24 @@
+import environ
+import os
 from pathlib import Path
 from datetime import timedelta
 
+# Inicializar entorno
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+# Cargar archivo .env.dev
+environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env.dev'))
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Seguridad
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env.bool('DEBUG')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
-SECRET_KEY = 'django-insecure-pc+=i6m%lj$$r4&)#j(1dv^_sg+creblp@9+yxojqz8omnp^8w'
-
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
-
+# Aplicaciones
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -25,6 +32,7 @@ INSTALLED_APPS = [
     'desktop_ui',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -35,8 +43,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# URLs y WSGI
 ROOT_URLCONF = 'config.urls'
+WSGI_APPLICATION = 'config.wsgi.application'
 
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -52,55 +63,34 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
-
-
-
+# Base de datos
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': env.db(),  # Ej: sqlite:///db.sqlite3 o mysql://user:pass@host/db
 }
 
-
-
+# Validadores de contraseña
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-
-
+# Internacionalización
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
+TIME_ZONE = env('TIME_ZONE', default='UTC')
 USE_I18N = True
-
 USE_TZ = True
 
-
-
+# Archivos estáticos y multimedia
 STATIC_URL = 'static/'
+MEDIA_URL = env('MEDIA_URL', default='/media/')
+MEDIA_ROOT = BASE_DIR / env('MEDIA_ROOT', default='media')
 
-MEDIA_URL = "http://localhost:8000/media/"
-MEDIA_ROOT = BASE_DIR / "media"
-
-
-
+# Configuración por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# DRF y JWT
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -118,9 +108,9 @@ SPECTACULAR_SETTINGS = {
         'filter': True,
     }
 }
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QListWidget, QPushButton,
     QTextEdit, QHBoxLayout, QMessageBox, QApplication
@@ -6,7 +7,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QDesktopServices, QClipboard
 from PySide6.QtCore import QUrl, Qt
 
-EXPORT_FOLDER = "exports"
+EXPORT_FOLDER = Path("exportaciones_markdown")
 
 class ExportView(QWidget):
     def __init__(self):
@@ -39,14 +40,13 @@ class ExportView(QWidget):
         self.cargar_archivos()
 
     def cargar_archivos(self):
-        if not os.path.exists(EXPORT_FOLDER):
-            os.makedirs(EXPORT_FOLDER)
-        archivos = [f for f in os.listdir(EXPORT_FOLDER) if f.endswith(".md")]
+        EXPORT_FOLDER.mkdir(exist_ok=True)
+        archivos = [f.name for f in EXPORT_FOLDER.glob("*.md")]
         self.file_list.clear()
         self.file_list.addItems(archivos)
 
     def mostrar_preview(self, item):
-        path = os.path.join(EXPORT_FOLDER, item.text())
+        path = EXPORT_FOLDER / item.text()
         try:
             with open(path, "r", encoding="utf-8") as f:
                 contenido = f.read()
@@ -57,8 +57,8 @@ class ExportView(QWidget):
     def abrir_archivo(self):
         item = self.file_list.currentItem()
         if item:
-            path = os.path.join(EXPORT_FOLDER, item.text())
-            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+            path = EXPORT_FOLDER / item.text()
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
     def copiar_contenido(self):
         contenido = self.preview.toPlainText()

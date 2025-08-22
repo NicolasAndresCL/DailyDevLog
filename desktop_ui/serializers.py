@@ -28,19 +28,24 @@ class DailyLogSerializer(serializers.ModelSerializer):
             "link_respositorio",
             "commit_principal",
         ]
-        read_only_fields = ["fecha_creacion", "imagen_1_url", "imagen_2_url", "imagen_3_url"]
+        read_only_fields = [
+            "fecha_creacion",
+            "imagen_1_url",
+            "imagen_2_url",
+            "imagen_3_url",
+        ]
 
     def get_imagen_1_url(self, obj):
-        if obj.imagen_1:
-            return self.context["request"].build_absolute_uri(obj.imagen_1.url)
-        return None
+        return self._build_url(obj.imagen_1)
 
     def get_imagen_2_url(self, obj):
-        if obj.imagen_2:
-            return self.context["request"].build_absolute_uri(obj.imagen_2.url)
-        return None
+        return self._build_url(obj.imagen_2)
 
     def get_imagen_3_url(self, obj):
-        if obj.imagen_3:
-            return self.context["request"].build_absolute_uri(obj.imagen_3.url)
+        return self._build_url(obj.imagen_3)
+
+    def _build_url(self, imagen_field):
+        request = self.context.get("request")
+        if imagen_field and request:
+            return request.build_absolute_uri(imagen_field.url)
         return None
