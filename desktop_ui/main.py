@@ -1,185 +1,121 @@
+# main.py
 import sys
-from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout,
-    QLabel, QTabWidget, QPushButton, QHBoxLayout,
-    QGraphicsDropShadowEffect
-)
-from PySide6.QtGui import QFont, QIcon, QColor
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import *
+from PySide6.QtCore import Qt, QThreadPool
+from PySide6.QtGui import QIcon
 
-from desktop_ui.forms.task_form import TaskForm
-from desktop_ui.views.history_view import HistoryView
-from desktop_ui.views.stats_scroll import StatsDashboardScroll
-from desktop_ui.views.export_view import ExportView
+from forms.task_form import TaskForm
+from views.history_view import HistoryView
+from views.stats_scroll import StatsScroll
+from views.export_view import ExportView
+from views.stats_view import StatsView
 
 
-class DailyDevLogWindow(QMainWindow):
+class MainWindow(QMainWindow):
+    """Ventana principal de la aplicación."""
+
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("DailyDevLog")
-        self.setGeometry(100, 100, 1100, 720)
-        self.setMinimumSize(900, 600)
-        self.setWindowIcon(QIcon("media/icon.png"))
-
-        self._init_views()
+        self.setWindowTitle("💻 Dashboard TI diarias")
+        self.showMaximized()
+        self._pool = QThreadPool.globalInstance()
         self._init_ui()
 
-    def _init_views(self):
-        self.history_view = HistoryView()
-        self.task_form = TaskForm(history_view=self.history_view)
-        self.stats_scroll = StatsDashboardScroll()
-        self.export_view = ExportView()
+        # 🎨 Estilo global inspirado en Visual Studio Code (Dark+)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #1E1E1E;
+                color: #D4D4D4;
+                font-family: 'Segoe UI';
+                font-size: 13px;
+            }
+
+            QLineEdit, QTextEdit, QDoubleSpinBox {
+                background-color: #252526;
+                border: 1px solid #3C3C3C;
+                border-radius: 4px;
+                padding: 6px;
+                color: #D4D4D4;
+            }
+
+            QLabel {
+                color: #9CDCFE;
+                font-weight: bold;
+            }
+
+            QPushButton {
+                background-color: #701a75;
+                color: #9a3412;
+                border-radius: 4px;
+                padding: 6px 12px;
+            }
+
+            QPushButton:hover {
+                background-color: #2899F5;
+            }
+
+            QTabWidget::pane {
+                border: 1px solid #3C3C3C;
+                border-radius: 4px;
+                padding: 4px;
+            }
+
+            QTabBar::tab {
+                background-color: #252526;
+                color: #fde68a;
+                padding: 8px 16px;
+                border: 1px solid #3C3C3C;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+                margin-right: 2px;
+            }
+
+            QTabBar::tab:selected {
+                background-color: #1E1E1E;
+                border-bottom: 2px solid #007ACC;
+            }
+
+            QScrollArea {
+                border: none;
+            }
+        """)
 
     def _init_ui(self):
-        # 🎨 Estilos globales
-        self.setStyleSheet("""
-            QMainWindow {
-                background-color: #f7f9fc;
-            }
-            QLabel {
-                color: #2c3e50;
-            }
-            QTabWidget::pane {
-                border: none;
-                background: white;
-                border-radius: 12px;
-            }
-        """)
-
-        central_widget = QWidget()
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(25, 25, 25, 25)
-        main_layout.setSpacing(20)
-
-        # Header con título y botón
-        header = self._build_header()
-        main_layout.addWidget(header)
-
-        # Tabs con sombra
-        self.tabs = self._build_tabs()
-        shadow = QGraphicsDropShadowEffect(self.tabs)
-        shadow.setBlurRadius(18)
-        shadow.setXOffset(0)
-        shadow.setYOffset(6)
-        shadow.setColor(QColor(0, 0, 0, 60))
-        self.tabs.setGraphicsEffect(shadow)
-
-        main_layout.addWidget(self.tabs)
-        self.setCentralWidget(central_widget)
-
-    def _build_header(self):
-        container = QWidget()
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(20)
-
-        # Título principal
-        title = QLabel("DailyDevLog")
-        title.setFont(QFont("Segoe UI", 28, QFont.Bold))
-        title.setStyleSheet("color: #1a252f;")
-
-        # Subtítulo
-        subtitle = QLabel("Tu registro de progreso en TI 🚀")
-        subtitle.setFont(QFont("Segoe UI", 11))
-        subtitle.setStyleSheet("color: #7f8c8d;")
-
-        title_layout = QVBoxLayout()
-        title_layout.addWidget(title)
-        title_layout.addWidget(subtitle)
-
-        # Botón estilizado
-        btn_recargar = QPushButton("↻ Recargar")
-        btn_recargar.setToolTip("Recargar todas las vistas")
-        btn_recargar.setCursor(Qt.PointingHandCursor)
-        btn_recargar.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                padding: 10px 22px;
-                border-radius: 10px;
-                font-weight: bold;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-            QPushButton:pressed {
-                background-color: #1f6391;
-            }
-        """)
-        btn_recargar.clicked.connect(self._recargar_vistas)
-
-        layout.addLayout(title_layout)
-        layout.addStretch()
-        layout.addWidget(btn_recargar)
-
-        return container
-
-    def _build_tabs(self):
+        """Inicia la interfaz de usuario."""
         tabs = QTabWidget()
-        tabs.setTabPosition(QTabWidget.North)
+        tabs.setTabsClosable(False)
+        tabs.setMovable(False)
 
-        # 🎨 Estilo de pestañas moderno
-        tabs.setStyleSheet("""
-            QTabBar::tab {
-                background: #e8ecf1;
-                color: #5d6d7e;
-                padding: 12px 28px;
-                font-weight: bold;
-                font-size: 13px;
-                border-top-left-radius: 10px;
-                border-top-right-radius: 10px;
-                margin-right: 6px;
-                transition: all 0.3s ease;
-            }
-            QTabBar::tab:selected {
-                background: white;
-                color: #2c3e50;
-                border: 2px solid #3498db;
-                border-bottom: none;
-            }
-            QTabBar::tab:hover {
-                background: #d6dee6;
-                color: #2c3e50;
-            }
-        """)
+        icono_tarea = QIcon("desktop_ui/iconos/notebook.png")
+        icono_historial = QIcon("desktop_ui/iconos/database.png")
+        icono_estadisticas = QIcon("desktop_ui/iconos/balance.png")
+        icono_exportar = QIcon("desktop_ui/iconos/document-copy.png")
 
-        tabs.addTab(self.task_form, "📝 Registro")
-        tabs.addTab(self.history_view, "📜 Historial")
-        tabs.addTab(self.stats_scroll, "📊 Estadísticas")
-        tabs.addTab(self.export_view, "⬇ Exportar")
+        # ---------------- TAB 1: Task Form ----------------
+        task_form_widget = TaskForm()
+        tabs.addTab(task_form_widget, icono_tarea, "Formulario Tareas")
 
-        return tabs
+        # ---------------- TAB 2: Historial ----------------
+        history_widget = HistoryView()
+        tabs.addTab(history_widget, icono_historial, "Historial")
 
-    def _recargar_vistas(self):
-        # Aquí puedes implementar la lógica de recarga
-        print("🔄 Recargando vistas...")
+        # ---------------- TAB 3: Estadísticas ----------------
+        stats_view = StatsScroll(StatsView())
+        tabs.addTab(stats_view, icono_estadisticas, "Estadísticas")
 
-        
-        # Historial
-        if hasattr(self.history_view, "recargar"):
-            self.history_view.recargar()
+        # ----------------- TAB 4: Exportar --------------------
+        export_view = ExportView()
+        tabs.addTab(export_view, icono_exportar, "Exportar")
 
-        # Formulario de tareas (ej: limpiar o recargar proyectos)
-        if hasattr(self.task_form, "recargar"):
-            self.task_form.recargar()
-
-        # Estadísticas
-        if hasattr(self.stats_scroll, "recargar"):
-            self.stats_scroll.recargar()
-
-        # Exportar
-        if hasattr(self.export_view, "recargar"):
-            self.export_view.recargar()
-
-
-def main():
-    app = QApplication(sys.argv)
-    window = DailyDevLogWindow()
-    window.show()
-    sys.exit(app.exec())
+        # ---------------- Layout principal ----------------
+        main_widget = QWidget()
+        main_layout = QVBoxLayout(main_widget)
+        main_layout.addWidget(tabs)
+        self.setCentralWidget(main_widget)
 
 
 if __name__ == "__main__":
-    main()
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())

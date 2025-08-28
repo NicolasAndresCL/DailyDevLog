@@ -1,13 +1,27 @@
-# desktop_ui/views/stats_scroll.py
-from PySide6.QtWidgets import QScrollArea
-from .stats_view import StatsDashboard
+# stats_scroll.py
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QScrollArea, QFrame
+from PySide6.QtCore import Qt
 
-class StatsDashboardScroll(QScrollArea):
-    def __init__(self):
+class StatsScroll(QWidget):
+    def __init__(self, stats_view):
         super().__init__()
-        self.setWidgetResizable(True)
-        self.dashboard = StatsDashboard()
-        self.setWidget(self.dashboard)
+        self.setWindowTitle("📋 Estadísticas detalladas")
+        self.setObjectName("statsScroll")
 
-    def recargar(self):
-        self.dashboard.cargar_datos()
+        # Layout raíz
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Scroll area
+        scroll = QScrollArea()
+        scroll.setObjectName("statsScrollArea")
+        scroll.setWidgetResizable(True)
+
+        # Contenedor interno
+        content = QFrame()
+        content.setObjectName("statsScrollContent")
+        content.setLayout(QVBoxLayout())
+        content.layout().addWidget(stats_view)
+
+        scroll.setWidget(content)
+        layout.addWidget(scroll)

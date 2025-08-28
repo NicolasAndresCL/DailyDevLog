@@ -1,171 +1,182 @@
+# stats_view.py
+import os
 import httpx
 import pandas as pd
-from datetime import datetime
-from collections import defaultdict, Counter
-
-from PySide6.QtWidgets import QWidget, QGridLayout, QMessageBox, QLabel, QSizePolicy, QFrame, QVBoxLayout
-from PySide6.QtCharts import (
-    QChart, QChartView, QBarSeries, QBarSet,
-    QBarCategoryAxis, QValueAxis
+from PySide6.QtWidgets import (
+    QWidget, QGridLayout, QFrame, QVBoxLayout, QLabel
 )
-from PySide6.QtGui import QPainter, QPixmap, QColor, QFont
-from PySide6.QtCore import Qt, QSize
-
+from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Slot, Signal
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 import matplotlib.pyplot as plt
 import seaborn as sns
-import plotly.express as px
 
+API_URL = "http://localhost:8000/api/dailylog/"
 
-class StatsDashboard(QWidget):
+class _StatsSignals(QObject):
+    data     = Signal(dict)
+    error    = Signal(str)
+    finished = Signal()
+
+class _StatsWorker(QRunnable):
+    def __init__(self, url: str):
+        super().__init__()
+        self.url     = url
+        self.signals = _StatsSignals()
+
+    def run(self):
+        try:
+            with httpx.Client(timeout=15.0) as client:
+                r = client.get(self.url, params={"ordering":"fecha_creacion"})
+                r.raise_for_status()
+                logs = r.json().get("results", [])
+            if not logs:
+                self.signals.data.emit({"empty": True})
+                return
+
+            df = pd.DataFrame(logs)
+            df["fecha"] = pd.to_datetime(df["fecha_creacion"], errors="coerce")
+            df["hora"]   = df["fecha"].dt.hour
+            df["dia"]    = df["fecha"].dt.date
+            df["horas"]  = pd.to_numeric(df["horas"], errors="coerce")
+            df = df.dropna(subset=["horas"])
+            if df.empty:
+                self.signals.data.emit({"empty": True})
+                return
+
+            # barras por franja
+            df_barras = (
+                df.groupby(["dia","hora"])
+                  .agg({"horas":"sum"})
+                  .reset_index()
+            )
+            df_barras["parte"] = pd.cut(
+                df_barras["hora"],
+                bins=[0,12,18,24],
+                labels=["mañana","tarde","noche"],
+                include_lowest=True
+            )
+
+            # top tecnologías
+            df_tec = df.explode("tecnologias_utilizadas")
+            df_tec["tecnologias_utilizadas"] = (
+                df_tec["tecnologias_utilizadas"].str.strip()
+            )
+            df_tec = (
+                df_tec.groupby("tecnologias_utilizadas")
+                      .agg({"horas":"sum"})
+                      .reset_index()
+                      .sort_values("horas", ascending=False)
+                      .head(10)
+            )
+
+            self.signals.data.emit({
+                "barras": df_barras,
+                "tecnologias": df_tec
+            })
+
+        except Exception as e:
+            try:
+                self.signals.error.emit(str(e))
+            except RuntimeError:
+                pass
+
+class StatsView(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowTitle("📊 Estadísticas de productividad")
+        self.setObjectName("statsView")
 
-        self.layout = QGridLayout()
-        self.layout.setSpacing(25)  # Más aire entre gráficos
-        self.setLayout(self.layout)
+        # Asignar objectName a frames para QSS
+        self.frame_barras       = QFrame(objectName="sectionFrame")
+        self.frame_tecnologias  = QFrame(objectName="sectionFrame")
 
-        self.cargar_datos()
-
-    def cargar_datos(self):
-        while self.layout.count():
-            item = self.layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
-        try:
-            response = httpx.get("http://localhost:8000/api/dailylog/?ordering=fecha_creacion")
-            if response.status_code == 200:
-                logs = response.json().get("results", [])
-                if logs:
-                    df = pd.DataFrame(logs)
-                    df["fecha"] = pd.to_datetime(df["fecha_creacion"], errors="coerce")
-                    df["dia"] = df["fecha"].dt.date
-                    df["hora"] = df["fecha"].dt.hour
-                    df["horas"] = pd.to_numeric(df["horas"], errors="coerce")
-                    df = df.dropna(subset=["horas"])
-                    self.generar_dashboard(df)
-                else:
-                    self.mostrar_mensaje("No hay tareas registradas para graficar.")
-            else:
-                self.mostrar_mensaje(f"Error al obtener datos: {response.status_code}")
-        except Exception as e:
-            self.mostrar_mensaje(f"Error de conexión: {str(e)}")
-
-    def generar_dashboard(self, df):
-        try:
-            # 4 gráficos organizados en grilla
-            self.layout.addWidget(self._card("Horas por franja horaria", self._grafico_barras_qt(df)), 0, 0)
-            self.layout.addWidget(self._card("Evolución diaria de horas", self._grafico_linea_matplotlib(df)), 0, 1)
-            self.layout.addWidget(self._card("Heatmap de productividad por hora", self._heatmap_seaborn(df)), 1, 0)
-            self.layout.addWidget(self._card("Distribución por tecnologías", self._grafico_circular_plotly(df)), 1, 1)
-
-            # Ajusta tamaño mínimo del dashboard
-            self.setMinimumSize(QSize(1100, 900))
-        except Exception as e:
-            self.mostrar_mensaje(f"Error al generar gráficos: {str(e)}")
-
-    # ---------- Helpers visuales ----------
-    def _card(self, titulo, widget):
-        """ Crea un card con encabezado y un gráfico """
-        frame = QFrame()
-        frame.setStyleSheet("""
-            QFrame {
-                background: white;
-                border-radius: 12px;
-                border: 1px solid #dfe6e9;
+        # Configurar Seaborn/Matplotlib para alto contraste
+        sns.set_theme(
+            style    = "darkgrid",
+            palette  = "pastel",
+            rc       = {
+                "axes.facecolor":    "#1A1A1A",
+                "figure.facecolor":  "#121212",
+                "savefig.facecolor": "#121212",
+                "grid.color":        "#333333",
+                "text.color":        "#E0E0E0",
+                "xtick.color":       "#E0E0E0",
+                "ytick.color":       "#E0E0E0",
+                "axes.edgecolor":    "#444444",
+                "axes.labelcolor":   "#E0E0E0",
+                "legend.facecolor":  "#1A1A1A",
+                "legend.edgecolor":  "#333333"
             }
-        """)
-        layout = QVBoxLayout(frame)
-        layout.setContentsMargins(15, 15, 15, 15)
-        layout.setSpacing(10)
+        )
 
-        header = QLabel(titulo)
-        header.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        header.setStyleSheet("color: #2c3e50;")
-        header.setAlignment(Qt.AlignCenter)
+        self._pool    = QThreadPool.globalInstance()
+        self._workers = []
 
-        layout.addWidget(header)
-        layout.addWidget(widget)
-        return frame
+        self._init_ui()
+        self.cargar_stats_async()
 
-    # ---------- Gráficos ----------
-    def _grafico_barras_qt(self, df):
-        agrupado = defaultdict(lambda: {"mañana": 0, "tarde": 0, "noche": 0})
-        for _, row in df.iterrows():
-            hora = row["hora"]
-            franja = "mañana" if 6 <= hora < 12 else "tarde" if 12 <= hora < 18 else "noche"
-            agrupado[str(row["dia"])][franja] += float(row["horas"])
+    def _init_ui(self):
+        layout = QGridLayout(self)
+        layout.setSpacing(15)
 
-        fechas = sorted(agrupado.keys())
-        series = QBarSeries()
-        colores = {"mañana": "#3498db", "tarde": "#2ecc71", "noche": "#e67e22"}
+        # Panel de barras
+        self.frame_barras.setLayout(QVBoxLayout())
+        layout.addWidget(self.frame_barras, 0, 0)
 
-        for franja in ["mañana", "tarde", "noche"]:
-            bar_set = QBarSet(franja.capitalize())
-            bar_set.setColor(QColor(colores[franja]))
-            for fecha in fechas:
-                bar_set.append(agrupado[fecha][franja])
-            series.append(bar_set)
+        # Panel de top tecnologías
+        self.frame_tecnologias.setLayout(QVBoxLayout())
+        layout.addWidget(self.frame_tecnologias, 0, 1)
 
-        chart = QChart()
-        chart.addSeries(series)
-        chart.setAnimationOptions(QChart.SeriesAnimations)
+    def cargar_stats_async(self):
+        worker = _StatsWorker(API_URL)
+        worker.signals.data.connect(self._on_data)
+        worker.signals.error.connect(self._on_error)
+        self._workers.append(worker)
+        self._pool.start(worker)
 
-        axis_x = QBarCategoryAxis()
-        axis_x.append(fechas)
-        chart.addAxis(axis_x, Qt.AlignBottom)
-        series.attachAxis(axis_x)
+    @Slot(dict)
+    def _on_data(self, data):
+        if data.get("empty"):
+            self.frame_barras.layout().addWidget(QLabel("No hay datos."))
+            self.frame_tecnologias.layout().addWidget(QLabel("No hay datos."))
+            return
+        self._dibujar_barras(data["barras"])
+        self._dibujar_top_tecnologias(data["tecnologias"])
 
-        axis_y = QValueAxis()
-        axis_y.setLabelFormat("%.1f")
-        axis_y.setTitleText("Horas")
-        axis_y.setRange(0, max(sum(agrupado[f].values()) for f in fechas) + 1)
-        chart.addAxis(axis_y, Qt.AlignLeft)
-        series.attachAxis(axis_y)
+    @Slot(str)
+    def _on_error(self, msg):
+        self.frame_barras.layout().addWidget(QLabel(f"Error: {msg}"))
+        self.frame_tecnologias.layout().addWidget(QLabel(f"Error: {msg}"))
 
-        chart_view = QChartView(chart)
-        chart_view.setRenderHint(QPainter.Antialiasing)
-        chart_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        return chart_view
+    def _dibujar_barras(self, df):
+        fig, ax = plt.subplots(
+            figsize=(6,4), facecolor="#121212"
+        )
+        ax.set_facecolor("#1A1A1A")
+        sns.barplot(
+            x="parte", y="horas",
+            hue="dia", data=df,
+            ax=ax, edgecolor="#333333"
+        )
+        ax.set_ylabel("Horas trabajadas")
+        ax.set_xlabel("Franja del día")
+        ax.set_title("Horas por franja del día", color="#E0E0E0")
+        ax.legend(title="Día", facecolor="#1A1A1A", edgecolor="#333333")
+        canvas = Canvas(fig)
+        canvas.setStyleSheet("background-color: #121212; border: none;")
+        self.frame_barras.layout().addWidget(canvas)
 
-    def _grafico_linea_matplotlib(self, df):
-        plt.style.use("seaborn-v0_8")
-        fig, ax = plt.subplots(figsize=(8, 5))
-        df.groupby("dia")["horas"].sum().plot(kind="line", marker="o", ax=ax, color="#2ecc71")
-        ax.set_xlabel("Fecha")
-        ax.set_ylabel("Horas")
-        ax.set_title("")
-        ax.grid(True)
-        fig.tight_layout()
-        return Canvas(fig)
-
-    def _heatmap_seaborn(self, df):
-        pivot = df.pivot_table(index="hora", columns="dia", values="horas", aggfunc="sum", fill_value=0)
-        fig, ax = plt.subplots(figsize=(8, 5))
-        sns.heatmap(pivot, cmap="YlGnBu", ax=ax, annot=True, fmt=".1f", linewidths=0.5, linecolor="gray")
-        ax.set_title("")
-        fig.tight_layout()
-        return Canvas(fig)
-
-    def _grafico_circular_plotly(self, df):
-        tech_list = df["tecnologias_utilizadas"].dropna().str.split(", ")
-        flat_list = [tech for sublist in tech_list for tech in sublist]
-        tech_counter = Counter(flat_list)
-        tech_df = pd.DataFrame.from_dict(tech_counter, orient="index", columns=["horas"]).reset_index()
-        tech_df.columns = ["tecnologia", "horas"]
-
-        fig = px.pie(tech_df, names="tecnologia", values="horas")
-        fig.update_traces(textposition="inside", textinfo="percent+label",
-                          marker=dict(line=dict(color="#000000", width=1)))
-        temp_image_path = "media/temp_pie.png"
-        fig.write_image(temp_image_path, scale=2.0)
-
-        label = QLabel()
-        pixmap = QPixmap(temp_image_path)
-        label.setPixmap(pixmap.scaled(500, 400, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-        label.setAlignment(Qt.AlignCenter)
-        return label
-
-    def mostrar_mensaje(self, texto):
-        QMessageBox.information(self, "Dashboard", texto)
+    def _dibujar_top_tecnologias(self, df):
+        fig, ax = plt.subplots(
+            figsize=(6,4), facecolor="#121212"
+        )
+        ax.set_facecolor("#1A1A1A")
+        sns.barplot(
+            x="horas", y="tecnologias_utilizadas",
+            data=df, ax=ax, color="#00D4FF", edgecolor="#333333"
+        )
+        ax.set_xlabel("Cantidad de horas", color="#E0E0E0")
+        ax.set_title("Top Tecnologías", color="#E0E0E0")
+        canvas = Canvas(fig)
+        canvas.setStyleSheet("background-color: #121212; border: none;")
+        self.frame_tecnologias.layout().addWidget(canvas)
