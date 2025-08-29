@@ -45,7 +45,7 @@ class DailyLogSerializer(serializers.ModelSerializer):
         return self._build_url(obj.imagen_3)
 
     def _build_url(self, imagen_field):
-        request = self.context.get("request")
-        if imagen_field and request:
-            return request.build_absolute_uri(imagen_field.url)
+        if imagen_field:
+            return f"/media/{imagen_field.name}"
         return None
+

@@ -73,7 +73,7 @@ class TaskForm(QWidget):
 
             QPushButton {
                 background-color: #701a75;
-                color: #9a3412;
+                color: #007ACC;
                 border-radius: 4px;
                 padding: 6px 12px;
             }

@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class DailyLog(models.Model):
     nombre_tarea = models.CharField(max_length=255)
@@ -8,6 +9,12 @@ class DailyLog(models.Model):
 
     # Timestamps
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def get_imagen_url(self, imagen_field):
+        if imagen_field:
+            return imagen_field.url
+        return None
+
 
     # Imágenes adjuntas
     imagen_1 = models.ImageField(upload_to='dailylog/', blank=True, null=True)
