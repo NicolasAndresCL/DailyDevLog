@@ -6,7 +6,8 @@ from drf_spectacular.views import (
     SpectacularRedocView,
 )
 from desktop_ui.views.api.dailylog_views import DailyLogListCreateAPIView, DailyLogDetailAPIView
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from desktop_ui.views.api.auth_views import CustomTokenObtainPairView as TokenObtainPairView
+from desktop_ui.views.api.auth_views import CustomTokenRefreshView as TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
 import os

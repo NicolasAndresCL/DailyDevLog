@@ -3,6 +3,7 @@ from rest_framework.pagination import PageNumberPagination
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from desktop_ui.models import DailyLog
 from desktop_ui.serializers import DailyLogSerializer
+from rest_framework.permissions import IsAuthenticated
 
 # 🔧 Paginación personalizada
 class DailyLogPagination(PageNumberPagination):
@@ -23,6 +24,7 @@ class DailyLogPagination(PageNumberPagination):
         description="Crea un nuevo registro con nombre, horas, tecnologías, descripción, links técnicos e imágenes adjuntas.",
         tags=["DailyLog"],
         operation_id="dailylog_create",
+        auth=[{"Bearer": []}],
     ),
 )
 class DailyLogListCreateAPIView(
@@ -30,6 +32,7 @@ class DailyLogListCreateAPIView(
     mixins.CreateModelMixin,
     generics.GenericAPIView
 ):
+    permission_classes = []
     queryset = DailyLog.objects.all().order_by("fecha_creacion")
     serializer_class = DailyLogSerializer
     pagination_class = DailyLogPagination
@@ -42,6 +45,8 @@ class DailyLogListCreateAPIView(
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         return self.create(request, *args, **kwargs)
 
 # 📌 Vista para detalle, actualización y eliminación
@@ -57,18 +62,21 @@ class DailyLogListCreateAPIView(
         description="Modifica los datos de una tarea existente, incluyendo descripción, links e imágenes.",
         tags=["DailyLog"],
         operation_id="dailylog_update",
+        auth=[{"Bearer": []}],
     ),
     patch=extend_schema(
         summary="Actualizar parcialmente tarea diaria",
         description="Modifica uno o más campos de una tarea existente sin reemplazar el registro completo.",
         tags=["DailyLog"],
         operation_id="dailylog_partial_update",
+        auth=[{"Bearer": []}],
     ),
     delete=extend_schema(
         summary="Eliminar tarea diaria",
         description="Elimina un registro específico del historial de tareas por ID.",
         tags=["DailyLog"],
         operation_id="dailylog_delete",
+        auth=[{"Bearer": []}],
     ),
 )
 class DailyLogDetailAPIView(
@@ -77,6 +85,7 @@ class DailyLogDetailAPIView(
     mixins.DestroyModelMixin,
     generics.GenericAPIView
 ):
+    permission_classes = []
     queryset = DailyLog.objects.all()
     serializer_class = DailyLogSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
@@ -85,10 +94,16 @@ class DailyLogDetailAPIView(
         return self.retrieve(request, *args, **kwargs)
 
     def put(self, request, *args, **kwargs):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         return self.update(request, *args, **kwargs)
 
     def patch(self, request, *args, **kwargs):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         return self.partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
+        self.permission_classes = [IsAuthenticated]
+        self.check_permissions(request)
         return self.destroy(request, *args, **kwargs)
