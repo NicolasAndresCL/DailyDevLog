@@ -3,22 +3,18 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
-# Inicializar entorno
 env = environ.Env(
     DEBUG=(bool, False)
 )
 
-# Cargar archivo .env.dev
 environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env.dev'))
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Seguridad
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
-# Aplicaciones
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -33,7 +29,6 @@ INSTALLED_APPS = [
     'desktop_ui',
 ]
 
-# Middleware
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -45,15 +40,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # tu frontend local
+    "http://localhost:5173",  
 ]
 
+CORS_ALLOW_CREDENTIALS = True
 
-# URLs y WSGI
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -69,12 +63,10 @@ TEMPLATES = [
     },
 ]
 
-# Base de datos
 DATABASES = {
-    'default': env.db(),  # Ej: sqlite:///db.sqlite3 o mysql://user:pass@host/db
+    'default': env.db(),  
 }
 
-# Validadores de contraseña
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -82,21 +74,17 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# Internacionalización
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = env('TIME_ZONE', default='UTC')
 USE_I18N = True
 USE_TZ = True
 
-# Archivos estáticos y multimedia
 STATIC_URL = 'static/'
 MEDIA_URL = env('MEDIA_URL', default='/media/')
 MEDIA_ROOT = BASE_DIR / env('MEDIA_ROOT', default='media')
 
-# Configuración por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# DRF y JWT
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': [
