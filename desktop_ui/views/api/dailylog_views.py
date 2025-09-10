@@ -1,6 +1,7 @@
 from rest_framework import generics, mixins, filters, parsers
 from rest_framework.pagination import PageNumberPagination
-from drf_spectacular.utils import extend_schema_view, extend_schema
+from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiParameter
+from django_filters.rest_framework import DjangoFilterBackend
 from desktop_ui.models import DailyLog
 from desktop_ui.serializers import DailyLogSerializer
 from rest_framework.permissions import IsAuthenticated
@@ -15,13 +16,28 @@ class DailyLogPagination(PageNumberPagination):
 @extend_schema_view(
     get=extend_schema(
         summary="Listar tareas diarias",
-        description="Devuelve una lista paginada de tareas registradas con filtros, ordenamiento y previews de imágenes.",
+        description=(
+            "Devuelve una lista paginada de registros con campos "
+            "'project_name' y 'project_type', "
+            "búsqueda, filtrado por tipo de proyecto, ordenamiento y URLs de imágenes."
+        ),
         tags=["DailyLog"],
         operation_id="dailylog_list",
+        parameters=[
+            OpenApiParameter(
+                name="project_type",
+                description="Filtrar por tipo de proyecto: frontend, backend o fullstack",
+                required=False,
+                type=str
+            ),
+        ],
     ),
     post=extend_schema(
         summary="Registrar nueva tarea diaria",
-        description="Crea un nuevo registro con nombre, horas, tecnologías, descripción, links técnicos e imágenes adjuntas.",
+        description=(
+            "Crea un nuevo registro con nombre de proyecto, tipo de proyecto, "
+            "nombre de tarea, horas, tecnologías, descripción, links e imágenes."
+        ),
         tags=["DailyLog"],
         operation_id="dailylog_create",
         auth=[{"Bearer": []}],
@@ -37,9 +53,24 @@ class DailyLogListCreateAPIView(
     serializer_class = DailyLogSerializer
     pagination_class = DailyLogPagination
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["nombre_tarea", "descripcion", "tecnologias_utilizadas"]
-    ordering_fields = ["fecha_creacion", "horas"]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ["project_type"]
+    search_fields = [
+        "project_name",
+        "nombre_tarea",
+        "descripcion",
+        "tecnologias_utilizadas",
+    ]
+    ordering_fields = [
+        "fecha_creacion",
+        "horas",
+        "project_name",
+        "project_type",
+    ]
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -49,31 +80,35 @@ class DailyLogListCreateAPIView(
         self.check_permissions(request)
         return self.create(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        # Aquí podrías inyectar usuario u otros datos por defecto
+        serializer.save()
+
 # 📌 Vista para detalle, actualización y eliminación
 @extend_schema_view(
     get=extend_schema(
         summary="Ver detalle de tarea diaria",
-        description="Devuelve los datos completos de una tarea específica por ID, incluyendo imágenes y links.",
+        description="Obtiene registro completo incluyendo proyecto, tipo, imágenes y links.",
         tags=["DailyLog"],
         operation_id="dailylog_retrieve",
     ),
     put=extend_schema(
         summary="Actualizar tarea diaria",
-        description="Modifica los datos de una tarea existente, incluyendo descripción, links e imágenes.",
+        description="Modifica todos los campos de un registro existente.",
         tags=["DailyLog"],
         operation_id="dailylog_update",
         auth=[{"Bearer": []}],
     ),
     patch=extend_schema(
         summary="Actualizar parcialmente tarea diaria",
-        description="Modifica uno o más campos de una tarea existente sin reemplazar el registro completo.",
+        description="Modifica uno o más campos sin reemplazar el registro completo.",
         tags=["DailyLog"],
         operation_id="dailylog_partial_update",
         auth=[{"Bearer": []}],
     ),
     delete=extend_schema(
         summary="Eliminar tarea diaria",
-        description="Elimina un registro específico del historial de tareas por ID.",
+        description="Elimina un registro específico por ID.",
         tags=["DailyLog"],
         operation_id="dailylog_delete",
         auth=[{"Bearer": []}],

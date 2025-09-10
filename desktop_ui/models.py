@@ -2,6 +2,23 @@ from django.db import models
 from django.conf import settings
 
 class DailyLog(models.Model):
+    project_name = models.CharField(
+        max_length=100,
+        verbose_name="Nombre del proyecto"
+    )
+
+    PROJECT_TYPE_CHOICES = [
+        ("frontend", "Frontend"),
+        ("backend",  "Backend"),
+        ("fullstack", "Fullstack"),
+    ]
+    project_type = models.CharField(
+        max_length=20,
+        choices=PROJECT_TYPE_CHOICES,
+        default='frontend',
+        blank=True,
+        verbose_name="Tipo de proyecto"
+    )
     nombre_tarea = models.CharField(max_length=255)
     descripcion = models.TextField(blank=True)
     horas = models.DecimalField(max_digits=4, decimal_places=2)
