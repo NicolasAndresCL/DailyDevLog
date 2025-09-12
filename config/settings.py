@@ -1,19 +1,20 @@
-import environ
 import os
 from pathlib import Path
 from datetime import timedelta
-
-env = environ.Env(
-    DEBUG=(bool, False)
-)
-
-environ.Env.read_env(os.path.join(Path(__file__).resolve().parent.parent, '.env.dev'))
+import environ
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env(DEBUG=(bool, False))
+
+env.read_env(str(BASE_DIR / '.env'))
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env.bool('DEBUG')
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+
+raw_origins = env('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,11 +23,11 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'rest_framework_simplejwt',
     'django_filters',
     'corsheaders',
     'drf_spectacular',
-    'rest_framework',
     'desktop_ui',
 ]
 
@@ -40,10 +41,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  
-]
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'config.urls'
@@ -76,31 +77,30 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = env('TIME_ZONE', default='UTC')
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE     = env('TIME_ZONE', default='UTC')
+USE_I18N      = True
+USE_TZ        = True
 
-STATIC_URL = 'static/'
-MEDIA_URL = env('MEDIA_URL', default='/media/')
-MEDIA_ROOT = BASE_DIR / env('MEDIA_ROOT', default='media')
+STATIC_URL  = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
+
+MEDIA_URL   = env('MEDIA_URL', default='/media/')
+MEDIA_ROOT  = BASE_DIR / env('MEDIA_ROOT', default='media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    # Paginación global opcional
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10,
-
-    # Backends de filtrado y búsqueda
-    "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_framework.DjangoFilterBackend",
-        "rest_framework.filters.SearchFilter",
-        "rest_framework.filters.OrderingFilter",
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -111,7 +111,7 @@ SPECTACULAR_SETTINGS = {
     'SWAGGER_UI_SETTINGS': {
         'displayOperationId': True,
         'filter': True,
-    }
+    },
 }
 
 SIMPLE_JWT = {
