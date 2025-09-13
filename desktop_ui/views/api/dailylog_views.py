@@ -142,3 +142,8 @@ class DailyLogDetailAPIView(
         self.permission_classes = [IsAuthenticated]
         self.check_permissions(request)
         return self.destroy(request, *args, **kwargs)
+
+from django.views.generic import TemplateView
+
+class FrontendAppView(TemplateView):
+    template_name = "desktop_ui/index.html"
