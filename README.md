@@ -94,20 +94,24 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 
 ## Setup rápido
 
+Requiere [uv](https://docs.astral.sh/uv/). Las dependencias viven en `pyproject.toml`
+(grupos `dev` / `desktop` / `docs`); `uv.lock` fija versiones reproducibles.
+
 ```bash
 git clone https://github.com/NicolasAndresCL/DailyDevLog.git
 cd DailyDevLog
-python -m venv env
-source env/bin/activate            # o  env\Scripts\activate  en Windows
+cp .env.example .env                # ajusta SECRET_KEY / DATABASE_URL / ...
 
-pip install -r requirements/base.txt   # API (usa dev.txt para tests, desktop.txt para la GUI)
-
-# Configura un archivo .env con: SECRET_KEY, DEBUG, ALLOWED_HOSTS, DATABASE_URL, ...
-python manage.py migrate
-python manage.py runserver
+uv sync                             # instala API + grupo dev (tests/tooling)
+uv run python manage.py migrate
+uv run python manage.py runserver
 ```
 
-GUI de escritorio: `pip install -r requirements/desktop.txt` y luego `python -m desktop_ui.main`.
+- **Tests:** `uv run pytest` · **Tipos:** `uv run mypy .` · **Lint:** `uv run ruff check`
+- **GUI de escritorio:** `uv sync --group desktop` y luego `uv run python -m desktop_ui.main`.
+- **BD:** por defecto SQLite; define `DATABASE_URL=postgres://...` para PostgreSQL.
+
+> Alternativa sin uv: los `requirements/*.txt` (pip) siguen disponibles como fallback.
 
 ## Autor
 

@@ -14,8 +14,10 @@ build/
 
 # 📦 Entorno virtual
 env/
+.venv/
 .env
 .env.*
+!.env.example
 env
 
 # 🧪 Pytest y cobertura

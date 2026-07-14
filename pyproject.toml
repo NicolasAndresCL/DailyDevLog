@@ -1,0 +1,80 @@
+[project]
+name = "dailydevlog"
+version = "1.0.0"
+description = "Registro técnico diario de tareas TI: API Django REST + cliente de escritorio PySide6."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Nicolás Andrés Cano Leal" }]
+
+# ── Backend API (runtime) ──
+dependencies = [
+    "django>=5.2.5,<6.0",
+    "djangorestframework>=3.16.1",
+    "djangorestframework-simplejwt>=5.5.1",
+    "drf-spectacular>=0.28.0",
+    "drf-spectacular-sidecar>=2025.8.1",
+    "django-filter>=25.1",
+    "django-cors-headers>=4.7.0",
+    "django-environ>=0.12.0",
+    "pillow>=11.3.0",
+    "psycopg[binary]>=3.2",
+]
+
+[dependency-groups]
+# Desarrollo, testing y calidad (uv instala este grupo por defecto).
+dev = [
+    "pytest>=8.4.1",
+    "pytest-django>=4.11.1",
+    "pytest-cov>=6.2.1",
+    "pytest-mock>=3.14.1",
+    "coverage>=7.10.4",
+    "django-debug-toolbar>=6.0.0",
+    "django-extensions>=4.1",
+    "ruff>=0.6",
+    "mypy>=1.11",
+    "django-stubs[compatible-mypy]>=5.1",
+    "djangorestframework-stubs>=3.15",
+]
+# Cliente de escritorio PySide6 (opt-in: uv sync --group desktop).
+desktop = [
+    "pyside6>=6.9.1",
+    "httpx>=0.28.1",
+    "pandas>=2.3.2",
+    "matplotlib>=3.10.5",
+    "seaborn>=0.13.2",
+    "pyinstaller>=6.15.0",
+]
+# Documentación (opt-in: uv sync --group docs).
+docs = [
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.17",
+    "mkdocs-material-extensions>=1.3.1",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--cov=core --cov=desktop_ui --cov-report=term-missing --no-cov-on-fail"
+testpaths = ["tests", "desktop_ui"]
+
+[tool.coverage.run]
+branch = true
+omit = ["*/migrations/*", "*/tests/*", "desktop_ui/main.py", "desktop_ui/views/*", "desktop_ui/forms/*"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["*/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "DJ"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+exclude = ['migrations/', 'desktop_ui/(views|forms)/']
+warn_unused_ignores = true
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings"

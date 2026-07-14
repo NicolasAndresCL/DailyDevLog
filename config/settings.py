@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -9,12 +10,16 @@ env = environ.Env(DEBUG=(bool, False))
 
 env.read_env(str(BASE_DIR / '.env'))
 
-SECRET_KEY = env('SECRET_KEY')
-DEBUG = env.bool('DEBUG')
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
-
-raw_origins = env('CSRF_TRUSTED_ORIGINS', default='')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-dev-change-me')
+DEBUG = env.bool('DEBUG', default=True)
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+
+# En producción (DEBUG=False) exigir una SECRET_KEY real, no la de desarrollo.
+if not DEBUG and SECRET_KEY == 'django-insecure-dev-change-me':
+    raise ImproperlyConfigured(
+        "Define SECRET_KEY en el entorno para ejecutar con DEBUG=False."
+    )
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -66,7 +71,7 @@ TEMPLATES = [
 ]
 
 DATABASES = {
-    'default': env.db(),  
+    'default': env.db(default=f'sqlite:///{BASE_DIR / "db.sqlite3"}'),
 }
 
 AUTH_PASSWORD_VALIDATORS = [
