@@ -65,6 +65,7 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
   Estadísticas, Exportar), que consume la API vía `httpx`. La URL de la API es configurable
   con `DAILYDEVLOG_API_URL`.
 * **Admin de Django** para gestión directa (previews de imágenes, links clicables).
+* **Tema oscuro unificado** (`theme_dark.qss`); estadísticas con `matplotlib`/`seaborn`.
 * El SPA React previo (build sin código fuente) fue **retirado del servido** en el revival.
 
 ## Estado del proyecto
