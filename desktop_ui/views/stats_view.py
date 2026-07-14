@@ -56,11 +56,14 @@ class _StatsWorker(QRunnable):
                 include_lowest=True
             )
 
-            # top tecnologías
-            df_tec = df.explode("tecnologias_utilizadas")
+            # top tecnologías (una fila por tecnología: separar el CSV antes de explotar)
+            df_tec = df.copy()
             df_tec["tecnologias_utilizadas"] = (
-                df_tec["tecnologias_utilizadas"].str.strip()
+                df_tec["tecnologias_utilizadas"].fillna("").str.split(",")
             )
+            df_tec = df_tec.explode("tecnologias_utilizadas")
+            df_tec["tecnologias_utilizadas"] = df_tec["tecnologias_utilizadas"].str.strip()
+            df_tec = df_tec[df_tec["tecnologias_utilizadas"] != ""]
             df_tec = (
                 df_tec.groupby("tecnologias_utilizadas")
                       .agg({"horas":"sum"})

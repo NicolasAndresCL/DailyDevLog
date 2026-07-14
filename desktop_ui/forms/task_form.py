@@ -36,7 +36,7 @@ class _SendTaskWorker(QRunnable):
         finally:
             for f in self.files.values():
                 try: f.close()
-                except: pass
+                except Exception: pass
 
 class TaskForm(QWidget):
     task_added = Signal()
@@ -251,7 +251,7 @@ class TaskForm(QWidget):
         QMessageBox.information(self, "Éxito", msg)
         self.clear_fields()
         if self.history_view_ref and self.history_view_ref():
-            self.history_view_ref().cargar_datos()
+            self.history_view_ref().cargar_datos_async()
         self.task_added.emit()
 
     def _on_send_error(self, msg):

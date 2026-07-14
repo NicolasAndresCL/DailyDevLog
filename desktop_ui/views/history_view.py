@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal, Slot
 
-from export.markdown_exporter import exportar_a_markdown
+from desktop_ui.export.markdown_exporter import exportar_a_markdown
 
 API_URL = "http://localhost:8000/api/dailylog/"
 MEDIA_URL_BASE = "http://localhost:8000"
@@ -174,7 +174,7 @@ class HistoryView(QWidget):
             dt = datetime.fromisoformat(utc_str.replace("Z", "+00:00"))
             tz = pytz.timezone("America/Santiago")
             return dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        except:
+        except Exception:
             return "Fecha inválida"
 
     def cargar_datos_async(self):

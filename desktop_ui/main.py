@@ -4,11 +4,11 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import Qt, QThreadPool
 from PySide6.QtGui import QIcon
 
-from forms.task_form import TaskForm
-from views.history_view import HistoryView
-from views.stats_scroll import StatsScroll
-from views.export_view import ExportView
-from views.stats_view import StatsView
+from desktop_ui.forms.task_form import TaskForm
+from desktop_ui.views.history_view import HistoryView
+from desktop_ui.views.stats_scroll import StatsScroll
+from desktop_ui.views.export_view import ExportView
+from desktop_ui.views.stats_view import StatsView
 
 
 class MainWindow(QMainWindow):

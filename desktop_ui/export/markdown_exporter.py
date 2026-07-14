@@ -44,7 +44,7 @@ def exportar_a_markdown(log, ruta_destino):
 
     for i in range(1, 4):
         imagen = get(f"imagen_{i}")
-        url = getattr(imagen, "url", None) if imagen else get(f"imagen_{i}_url")
+        url = get(f"imagen_{i}_url") or getattr(imagen, "url", None)
         if url:
             contenido.append(f"![Imagen {i}]({url})")
 
