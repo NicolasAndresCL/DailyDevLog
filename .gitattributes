@@ -1,0 +1,12 @@
+# Normaliza fines de línea: LF en el repo, evita el re-hash CRLF al commitear/pushear.
+* text=auto eol=lf
+
+# Scripts de Windows: CRLF en el working tree.
+*.bat text eol=crlf
+
+# Binarios (nunca normalizar).
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.qss text eol=lf
