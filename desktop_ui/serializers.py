@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from desktop_ui.models import DailyLog
+
 
 class DailyLogSerializer(serializers.ModelSerializer):
     project_name = serializers.CharField(

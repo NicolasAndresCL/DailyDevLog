@@ -1,13 +1,11 @@
 # stats_view.py
 import httpx
-import pandas as pd
-from PySide6.QtWidgets import (
-    QWidget, QGridLayout, QFrame, QVBoxLayout, QLabel
-)
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Slot, Signal
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QWidget
 
 from core.stats import compute_stats
 from desktop_client.config import API_URL

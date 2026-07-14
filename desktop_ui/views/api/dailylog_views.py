@@ -1,3 +1,5 @@
+from typing import Any
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import filters, parsers, viewsets
@@ -6,6 +8,9 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from desktop_ui.models import DailyLog
 from desktop_ui.serializers import DailyLogSerializer
+
+# drf-spectacular tipa `auth` de forma estricta; en runtime acepta list[dict].
+_BEARER_AUTH: list[Any] = [{"Bearer": []}]
 
 
 class DailyLogPagination(PageNumberPagination):
@@ -32,12 +37,12 @@ class DailyLogPagination(PageNumberPagination):
         ],
     ),
     retrieve=extend_schema(summary="Ver detalle de tarea diaria", tags=["DailyLog"]),
-    create=extend_schema(summary="Registrar tarea diaria", tags=["DailyLog"], auth=[{"Bearer": []}]),
-    update=extend_schema(summary="Actualizar tarea diaria", tags=["DailyLog"], auth=[{"Bearer": []}]),
+    create=extend_schema(summary="Registrar tarea diaria", tags=["DailyLog"], auth=_BEARER_AUTH),
+    update=extend_schema(summary="Actualizar tarea diaria", tags=["DailyLog"], auth=_BEARER_AUTH),
     partial_update=extend_schema(
-        summary="Actualizar parcialmente tarea diaria", tags=["DailyLog"], auth=[{"Bearer": []}]
+        summary="Actualizar parcialmente tarea diaria", tags=["DailyLog"], auth=_BEARER_AUTH
     ),
-    destroy=extend_schema(summary="Eliminar tarea diaria", tags=["DailyLog"], auth=[{"Bearer": []}]),
+    destroy=extend_schema(summary="Eliminar tarea diaria", tags=["DailyLog"], auth=_BEARER_AUTH),
 )
 class DailyLogViewSet(viewsets.ModelViewSet):
     """CRUD de tareas diarias. Lectura pública; escritura sólo autenticada (JWT)."""

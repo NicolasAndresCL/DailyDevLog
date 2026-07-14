@@ -64,15 +64,39 @@ omit = ["*/migrations/*", "*/tests/*", "desktop_ui/main.py", "desktop_ui/views/*
 [tool.ruff]
 target-version = "py312"
 line-length = 120
-extend-exclude = ["*/migrations/*"]
+# La GUI Qt legacy se limpiará en la Fase 3 (revival de la GUI).
+extend-exclude = [
+    "*/migrations/*",
+    "desktop_ui/main.py",
+    "desktop_ui/forms/task_form.py",
+    "desktop_ui/views/history_view.py",
+    "desktop_ui/views/export_view.py",
+    "desktop_ui/views/stats_scroll.py",
+    "desktop_ui/layout_colorwidget.py",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "DJ"]
 
+[tool.ruff.lint.per-file-ignores]
+# null=True en campos de texto/URL: normalización pendiente para la Fase 1b.
+"desktop_ui/models.py" = ["DJ001"]
+
 [tool.mypy]
 python_version = "3.12"
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-exclude = ['migrations/', 'desktop_ui/(views|forms)/']
+# Se tipa el núcleo (core), config, modelos, serializers y la API.
+# La GUI Qt (views/forms), el admin presentacional y los tests quedan fuera.
+exclude = [
+    'migrations/',
+    'desktop_ui/views/(history_view|stats_view|stats_scroll|export_view)\.py',
+    'desktop_ui/forms/',
+    'desktop_ui/main\.py',
+    'desktop_ui/layout_colorwidget\.py',
+    'desktop_ui/admin\.py',
+    'tests/',
+    'conftest\.py',
+]
 warn_unused_ignores = true
 ignore_missing_imports = true
 

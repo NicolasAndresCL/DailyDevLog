@@ -41,8 +41,11 @@ def compute_stats(logs: list[dict]) -> dict:
     por_tecnologia: dict[str, float] = {}
 
     for log in logs:
+        horas_raw = log.get("horas")
+        if horas_raw is None:
+            continue
         try:
-            horas = float(log.get("horas"))
+            horas = float(horas_raw)
         except (TypeError, ValueError):
             continue
 
@@ -63,10 +66,7 @@ def compute_stats(logs: list[dict]) -> dict:
         {"dia": dia, "parte": parte, "horas": horas}
         for (dia, parte), horas in sorted(por_franja.items())
     ]
-    top_tecnologias = sorted(
-        ({"tecnologia": t, "horas": h} for t, h in por_tecnologia.items()),
-        key=lambda d: d["horas"],
-        reverse=True,
-    )[:10]
+    top = sorted(por_tecnologia.items(), key=lambda kv: kv[1], reverse=True)[:10]
+    top_tecnologias = [{"tecnologia": t, "horas": h} for t, h in top]
 
     return {"por_franja": por_franja_list, "top_tecnologias": top_tecnologias}
