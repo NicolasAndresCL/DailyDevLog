@@ -59,23 +59,23 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 * Login funcional con persistencia de token y logout controlado
 * Exportación Markdown con estructura técnica y branding
 
-## Frontend React
+## Cliente y frontend
 
-* Login con JWT y persistencia en localStorage
-* Envío de token en headers Authorization: Bearer
-* Mensajes visuales si el usuario no está autenticado
-* Tabs modulares: Formulario, Historial, Estadísticas
-* Estilo accesible y coherente con Radix UI + Stitches
+* **Cliente principal:** GUI de escritorio **PySide6** (tabs: Formulario, Historial,
+  Estadísticas, Exportar), que consume la API vía `httpx`. La URL de la API es configurable
+  con `DAILYDEVLOG_API_URL`.
+* **Admin de Django** para gestión directa (previews de imágenes, links clicables).
+* El SPA React previo (build sin código fuente) fue **retirado del servido** en el revival.
 
 ## Estado del proyecto
 
-> ⚠️ **Versión previa (legado).** DailyDevLog es una iteración anterior del registro de tareas
-> cuya funcionalidad evolucionó hacia un proyecto mayor. Se conserva como referencia técnica.
+> 🔧 **En revival a estándar de producción** (local → IaC completo). Iteración previa del
+> registro de tareas; su base de patrones vive también en un proyecto mayor.
 
-* **Testing:** aún **sin suite** implementada. El stack `pytest`/`pytest-django`/`pytest-cov`
-  está declarado en `requirements/dev.txt`, pero todavía no hay tests.
-* **CI:** sin pipeline en GitHub Actions por ahora.
-* **Dependencias:** separadas por perfil en `requirements/` (`base` · `dev` · `desktop` · `docs`).
+* **Testing:** suite `pytest` sobre la lógica pura (`core/`) y smoke de la API (`uv run pytest`).
+* **Arquitectura:** lógica de negocio en `core/` (pura, testeable); API DRF con `ModelViewSet`.
+* **CI:** en preparación (GitHub Actions, fase siguiente).
+* **BD:** PostgreSQL en producción, SQLite por defecto/tests.
 
 ## Exportación a Markdown
 
