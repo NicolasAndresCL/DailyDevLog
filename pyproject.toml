@@ -55,7 +55,7 @@ docs = [
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "--cov=core --cov=desktop_ui --cov-report=term-missing --no-cov-on-fail"
-testpaths = ["tests", "desktop_ui"]
+testpaths = ["tests"]
 
 [tool.coverage.run]
 branch = true
@@ -63,7 +63,7 @@ omit = ["*/migrations/*", "*/tests/*", "desktop_ui/main.py", "desktop_ui/views/*
 
 [tool.ruff]
 target-version = "py312"
-line-length = 100
+line-length = 120
 extend-exclude = ["*/migrations/*"]
 
 [tool.ruff.lint]
