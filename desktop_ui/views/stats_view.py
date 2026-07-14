@@ -66,7 +66,7 @@ class StatsView(QWidget):
         )
 
         self._pool    = QThreadPool.globalInstance()
-        self._workers = []
+        self._workers = set()
 
         self._init_ui()
         self.cargar_stats_async()
@@ -87,7 +87,9 @@ class StatsView(QWidget):
         worker = _StatsWorker(API_URL)
         worker.signals.data.connect(self._on_data)
         worker.signals.error.connect(self._on_error)
-        self._workers.append(worker)
+        worker.signals.data.connect(lambda *_: self._workers.discard(worker))
+        worker.signals.error.connect(lambda *_: self._workers.discard(worker))
+        self._workers.add(worker)
         self._pool.start(worker)
 
     @Slot(dict)

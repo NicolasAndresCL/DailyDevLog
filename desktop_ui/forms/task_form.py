@@ -45,54 +45,9 @@ class TaskForm(QWidget):
         super().__init__()
         self.setWindowTitle("Registrar Tarea Diaria")
         self._pool = QThreadPool.globalInstance()
-        self._workers = []
+        self._workers = set()
         self.history_view_ref = weakref.ref(history_view) if history_view else None
         self._init_ui()
-
-        # 🎨 Estilo global inspirado en vsc
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1E1E1E;
-                color: #86198f;
-                font-family: 'Segoe UI';
-                font-size: 13px;
-            }
-
-            QLineEdit, QTextEdit, QDoubleSpinBox {
-                background-color: #252526;
-                border: 1px solid #3C3C3C;
-                border-radius: 4px;
-                padding: 6px;
-                color: #0d9488;
-            }
-
-            QLabel {
-                color: #9CDCFE;
-                font-weight: bold;
-            }
-
-            QPushButton {
-                background-color: #701a75;
-                color: #007ACC;
-                border-radius: 4px;
-                padding: 6px 12px;
-            }
-
-            QPushButton:hover {
-                background-color: #2899F5;
-            }
-
-            QScrollArea {
-                border: none;
-            }
-
-            QFrame {
-                border: 1px solid #3C3C3C;
-                border-radius: 6px;
-                padding: 8px;
-                background-color: #1E1E1E;
-            }
-        """)
 
 
     def _init_ui(self):
@@ -244,7 +199,9 @@ class TaskForm(QWidget):
         worker = _SendTaskWorker(data, files)
         worker.signals.success.connect(lambda msg, self_ref=weakref.ref(self): self_ref() and self_ref()._on_send_success(msg))
         worker.signals.error.connect(lambda msg, self_ref=weakref.ref(self): self_ref() and self_ref()._on_send_error(msg))
-        self._workers.append(worker)
+        worker.signals.success.connect(lambda *_: self._workers.discard(worker))
+        worker.signals.error.connect(lambda *_: self._workers.discard(worker))
+        self._workers.add(worker)
         self._pool.start(worker)
 
     def _on_send_success(self, msg):

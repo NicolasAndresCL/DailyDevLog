@@ -1,7 +1,6 @@
 # history_view.py
 from pathlib import Path
-from datetime import datetime
-import pytz
+
 import httpx
 
 from PySide6.QtWidgets import (
@@ -11,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal, Slot
 
+from core.datetime_utils import formatear_fecha_chile
 from core.markdown_export import exportar_a_markdown
 from desktop_client.config import API_URL
 
@@ -54,55 +54,10 @@ class HistoryView(QWidget):
         self.setWindowTitle("📂 Historial de tareas")
         self.setMinimumSize(1200, 650)
         self.setObjectName("historyView")
-        self.setStyleSheet("""
-            QWidget#historyView {
-                background-color: #1E1E1E;
-                color: #D4D4D4;
-                font-family: 'Segoe UI';
-                font-size: 13px;
-            }
-
-            QLineEdit {
-                background-color: #252526;
-                border: 1px solid #3C3C3C;
-                border-radius: 4px;
-                padding: 6px;
-                color: #D4D4D4;
-            }
-
-            QLabel#filterLabel {
-                color: #9CDCFE;
-                font-weight: bold;
-            }
-
-            QPushButton {
-                background-color: #007ACC;
-                color: #FFFFFF;
-                border-radius: 4px;
-                padding: 6px 12px;
-            }
-
-            QPushButton:hover {
-                background-color: #2899F5;
-            }
-
-            QTableWidget {
-                background-color: #1E1E1E;
-                gridline-color: #3C3C3C;
-                border: 1px solid #3C3C3C;
-            }
-
-            QHeaderView::section {
-                background-color: #252526;
-                color: #D4D4D4;
-                padding: 4px;
-                border: 1px solid #3C3C3C;
-            }
-        """)
         self.page = 1
         self.search_term = ""
         self._pool = QThreadPool.globalInstance()
-        self._workers = []
+        self._workers = set()
 
         self._init_ui()
         self.cargar_datos_async()
@@ -169,18 +124,15 @@ class HistoryView(QWidget):
         layout.addLayout(hl2)
 
     def convertir_a_chile(self, utc_str):
-        try:
-            dt = datetime.fromisoformat(utc_str.replace("Z", "+00:00"))
-            tz = pytz.timezone("America/Santiago")
-            return dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
-        except Exception:
-            return "Fecha inválida"
+        return formatear_fecha_chile(utc_str)
 
     def cargar_datos_async(self):
         worker = _HistoryWorker(self.page, self.search_term)
         worker.signals.data.connect(self._on_data_ready)
         worker.signals.error.connect(self._on_error)
-        self._workers.append(worker)
+        worker.signals.data.connect(lambda *_: self._workers.discard(worker))
+        worker.signals.error.connect(lambda *_: self._workers.discard(worker))
+        self._workers.add(worker)
         self._pool.start(worker)
 
     @Slot(list)

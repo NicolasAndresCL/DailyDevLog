@@ -1,5 +1,7 @@
 # main.py
 import sys
+from pathlib import Path
+
 from PySide6.QtWidgets import *
 from PySide6.QtCore import Qt, QThreadPool
 from PySide6.QtGui import QIcon
@@ -20,65 +22,6 @@ class MainWindow(QMainWindow):
         self.showMaximized()
         self._pool = QThreadPool.globalInstance()
         self._init_ui()
-
-        # 🎨 Estilo global inspirado en Visual Studio Code (Dark+)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1E1E1E;
-                color: #D4D4D4;
-                font-family: 'Segoe UI';
-                font-size: 13px;
-            }
-
-            QLineEdit, QTextEdit, QDoubleSpinBox {
-                background-color: #252526;
-                border: 1px solid #3C3C3C;
-                border-radius: 4px;
-                padding: 6px;
-                color: #D4D4D4;
-            }
-
-            QLabel {
-                color: #9CDCFE;
-                font-weight: bold;
-            }
-
-            QPushButton {
-                background-color: #701a75;
-                color: #9a3412;
-                border-radius: 4px;
-                padding: 6px 12px;
-            }
-
-            QPushButton:hover {
-                background-color: #2899F5;
-            }
-
-            QTabWidget::pane {
-                border: 1px solid #3C3C3C;
-                border-radius: 4px;
-                padding: 4px;
-            }
-
-            QTabBar::tab {
-                background-color: #252526;
-                color: #fde68a;
-                padding: 8px 16px;
-                border: 1px solid #3C3C3C;
-                border-top-left-radius: 4px;
-                border-top-right-radius: 4px;
-                margin-right: 2px;
-            }
-
-            QTabBar::tab:selected {
-                background-color: #1E1E1E;
-                border-bottom: 2px solid #007ACC;
-            }
-
-            QScrollArea {
-                border: none;
-            }
-        """)
 
     def _init_ui(self):
         """Inicia la interfaz de usuario."""
@@ -114,8 +57,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(main_widget)
 
 
+def _cargar_tema(app: QApplication) -> None:
+    """Aplica el tema oscuro unificado (theme_dark.qss) a toda la app."""
+    qss = Path(__file__).parent / "theme_dark.qss"
+    if qss.exists():
+        app.setStyleSheet(qss.read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    _cargar_tema(app)
     window = MainWindow()
     window.show()
     sys.exit(app.exec())
