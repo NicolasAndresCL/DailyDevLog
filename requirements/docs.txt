@@ -1,0 +1,5 @@
+# ── Documentación (MkDocs Material) ──
+# Instalar:  pip install -r requirements/docs.txt
+mkdocs==1.6.1
+mkdocs-material==9.6.17
+mkdocs-material-extensions==1.3.1

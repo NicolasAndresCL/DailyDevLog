@@ -1,0 +1,11 @@
+# ── GUI de escritorio (PySide6) — cliente HTTP de la API ──
+# Instalar:  pip install -r requirements/desktop.txt
+# No depende de Django; consume la API vía httpx.
+PySide6==6.9.1
+httpx==0.28.1
+pandas==2.3.2
+matplotlib==3.10.5
+seaborn==0.13.2
+pytz==2025.2
+# Empaquetado a ejecutable (.exe)
+pyinstaller==6.15.0

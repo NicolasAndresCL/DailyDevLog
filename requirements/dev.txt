@@ -1,0 +1,10 @@
+# ── Desarrollo y testing ──
+# Instalar:  pip install -r requirements/dev.txt
+-r base.txt
+pytest==8.4.1
+pytest-django==4.11.1
+pytest-cov==6.2.1
+pytest-mock==3.14.1
+coverage==7.10.4
+django-debug-toolbar==6.0.0
+django-extensions==4.1
