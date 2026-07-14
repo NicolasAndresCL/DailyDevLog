@@ -1,7 +1,6 @@
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from drf_spectacular.utils import extend_schema_view, extend_schema
-from rest_framework import status
-from rest_framework.response import Response
+
 
 @extend_schema_view(
     post=extend_schema(
