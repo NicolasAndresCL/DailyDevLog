@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtCore import Qt, Signal, QObject, QRunnable, QThreadPool
 import weakref
 
-API_URL = "http://localhost:8000/api/dailylog/"
+from desktop_client.config import API_URL
 
 class _SendTaskSignals(QObject):
     success = Signal(str)

@@ -1,16 +1,17 @@
 # stats_view.py
-import os
 import httpx
 import pandas as pd
 from PySide6.QtWidgets import (
     QWidget, QGridLayout, QFrame, QVBoxLayout, QLabel
 )
-from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Slot, Signal
+from PySide6.QtCore import QObject, QRunnable, QThreadPool, Slot, Signal
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as Canvas
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-API_URL = "http://localhost:8000/api/dailylog/"
+from core.stats import compute_stats
+from desktop_client.config import API_URL
+
 
 class _StatsSignals(QObject):
     data     = Signal(dict)
@@ -26,57 +27,11 @@ class _StatsWorker(QRunnable):
     def run(self):
         try:
             with httpx.Client(timeout=15.0) as client:
-                r = client.get(self.url, params={"ordering":"fecha_creacion"})
+                r = client.get(self.url, params={"ordering": "fecha_creacion"})
                 r.raise_for_status()
                 logs = r.json().get("results", [])
-            if not logs:
-                self.signals.data.emit({"empty": True})
-                return
-
-            df = pd.DataFrame(logs)
-            df["fecha"] = pd.to_datetime(df["fecha_creacion"], errors="coerce")
-            df["hora"]   = df["fecha"].dt.hour
-            df["dia"]    = df["fecha"].dt.date
-            df["horas"]  = pd.to_numeric(df["horas"], errors="coerce")
-            df = df.dropna(subset=["horas"])
-            if df.empty:
-                self.signals.data.emit({"empty": True})
-                return
-
-            # barras por franja
-            df_barras = (
-                df.groupby(["dia","hora"])
-                  .agg({"horas":"sum"})
-                  .reset_index()
-            )
-            df_barras["parte"] = pd.cut(
-                df_barras["hora"],
-                bins=[0,12,18,24],
-                labels=["mañana","tarde","noche"],
-                include_lowest=True
-            )
-
-            # top tecnologías (una fila por tecnología: separar el CSV antes de explotar)
-            df_tec = df.copy()
-            df_tec["tecnologias_utilizadas"] = (
-                df_tec["tecnologias_utilizadas"].fillna("").str.split(",")
-            )
-            df_tec = df_tec.explode("tecnologias_utilizadas")
-            df_tec["tecnologias_utilizadas"] = df_tec["tecnologias_utilizadas"].str.strip()
-            df_tec = df_tec[df_tec["tecnologias_utilizadas"] != ""]
-            df_tec = (
-                df_tec.groupby("tecnologias_utilizadas")
-                      .agg({"horas":"sum"})
-                      .reset_index()
-                      .sort_values("horas", ascending=False)
-                      .head(10)
-            )
-
-            self.signals.data.emit({
-                "barras": df_barras,
-                "tecnologias": df_tec
-            })
-
+            # Agregación pura y testeable (core), sin lógica de negocio en el worker.
+            self.signals.data.emit(compute_stats(logs))
         except Exception as e:
             try:
                 self.signals.error.emit(str(e))
@@ -143,18 +98,17 @@ class StatsView(QWidget):
             self.frame_barras.layout().addWidget(QLabel("No hay datos."))
             self.frame_tecnologias.layout().addWidget(QLabel("No hay datos."))
             return
-        self._dibujar_barras(data["barras"])
-        self._dibujar_top_tecnologias(data["tecnologias"])
+        self._dibujar_barras(data["por_franja"])
+        self._dibujar_top_tecnologias(data["top_tecnologias"])
 
     @Slot(str)
     def _on_error(self, msg):
         self.frame_barras.layout().addWidget(QLabel(f"Error: {msg}"))
         self.frame_tecnologias.layout().addWidget(QLabel(f"Error: {msg}"))
 
-    def _dibujar_barras(self, df):
-        fig, ax = plt.subplots(
-            figsize=(6,4), facecolor="#121212"
-        )
+    def _dibujar_barras(self, por_franja):
+        df = pd.DataFrame(por_franja)
+        fig, ax = plt.subplots(figsize=(6, 4), facecolor="#121212")
         ax.set_facecolor("#1A1A1A")
         sns.barplot(
             x="parte", y="horas",
@@ -169,13 +123,12 @@ class StatsView(QWidget):
         canvas.setStyleSheet("background-color: #121212; border: none;")
         self.frame_barras.layout().addWidget(canvas)
 
-    def _dibujar_top_tecnologias(self, df):
-        fig, ax = plt.subplots(
-            figsize=(6,4), facecolor="#121212"
-        )
+    def _dibujar_top_tecnologias(self, top_tecnologias):
+        df = pd.DataFrame(top_tecnologias)
+        fig, ax = plt.subplots(figsize=(6, 4), facecolor="#121212")
         ax.set_facecolor("#1A1A1A")
         sns.barplot(
-            x="horas", y="tecnologias_utilizadas",
+            x="horas", y="tecnologia",
             data=df, ax=ax, color="#00D4FF", edgecolor="#333333"
         )
         ax.set_xlabel("Cantidad de horas", color="#E0E0E0")

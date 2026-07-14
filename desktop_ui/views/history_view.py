@@ -11,10 +11,9 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal, Slot
 
-from desktop_ui.export.markdown_exporter import exportar_a_markdown
+from core.markdown_export import exportar_a_markdown
+from desktop_client.config import API_URL
 
-API_URL = "http://localhost:8000/api/dailylog/"
-MEDIA_URL_BASE = "http://localhost:8000"
 EXPORT_FOLDER = Path("exportaciones_markdown")
 
 
