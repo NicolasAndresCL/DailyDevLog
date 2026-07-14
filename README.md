@@ -73,8 +73,9 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 > registro de tareas; su base de patrones vive también en un proyecto mayor.
 
 * **Testing:** suite `pytest` sobre la lógica pura (`core/`) y smoke de la API (`uv run pytest`).
+* **Calidad:** `ruff` (lint) + `mypy` (tipos) sobre `core/` + API en verde.
 * **Arquitectura:** lógica de negocio en `core/` (pura, testeable); API DRF con `ModelViewSet`.
-* **CI:** en preparación (GitHub Actions, fase siguiente).
+* **CI:** GitHub Actions en cada push/PR — `ruff` + `mypy` + `pytest` en venv limpio (`uv sync --frozen`).
 * **BD:** PostgreSQL en producción, SQLite por defecto/tests.
 
 ## Exportación a Markdown
