@@ -66,3 +66,8 @@ reflex.json
 .githooks/
 
 replace.txt
+
+# 🤖 Guías IA y bitácora personal (no versionar)
+CLAUDE.md
+memory.md
+skill.md

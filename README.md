@@ -12,7 +12,7 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 | Base de datos | SQLite (dev) + MySQL (prod) | Persistencia local y escalable |
 | GUI escritorio | PySide6 + QtCharts | Interfaz visual para registrar, visualizar y exportar tareas |
 | Exportación | Markdown + Pillow | Exportación técnica con previews de imágenes |
-| Testing | Pytest + SQLite en memoria | Pruebas reproducibles y aisladas |
+| Testing | Pytest (previsto) | ⚠️ Suite aún no implementada — ver «Estado del proyecto» |
 | Empaquetado | PyInstaller | Generación de ejecutable multiplataforma |
 | DevOps | git filter-repo + githooks + .env por rama | Seguridad, trazabilidad y automatización |
 | Documentación | MkDocs + mkdocs-material | Showcase técnico y branding internacional |
@@ -67,12 +67,15 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 * Tabs modulares: Formulario, Historial, Estadísticas
 * Estilo accesible y coherente con Radix UI + Stitches
 
-## Testing reproducible
+## Estado del proyecto
 
-* Base de datos SQLite en memoria
-* Fixtures modulares
-* Cobertura con pytest-cov
-* Aislamiento total por entorno
+> ⚠️ **Versión previa (legado).** DailyDevLog es una iteración anterior del registro de tareas
+> cuya funcionalidad evolucionó hacia un proyecto mayor. Se conserva como referencia técnica.
+
+* **Testing:** aún **sin suite** implementada. El stack `pytest`/`pytest-django`/`pytest-cov`
+  está declarado en `requirements/dev.txt`, pero todavía no hay tests.
+* **CI:** sin pipeline en GitHub Actions por ahora.
+* **Dependencias:** separadas por perfil en `requirements/` (`base` · `dev` · `desktop` · `docs`).
 
 ## Exportación a Markdown
 
@@ -87,18 +90,24 @@ DailyDevLog es una aplicación multiplataforma para registrar avances técnicos 
 * Documentación bilingüe
 * Showcase con changelogs diarios
 * Integración con LinkedIn y portafolio
-* Automatización de backups y exportaciones
+* Exportaciones técnicas a Markdown
 
 ## Setup rápido
 
-bash
+```bash
 git clone https://github.com/NicolasAndresCL/DailyDevLog.git
 cd DailyDevLog
 python -m venv env
-source env/bin/activate  # o env\Scripts\activate en Windows
-pip install -r requirements.txt
+source env/bin/activate            # o  env\Scripts\activate  en Windows
+
+pip install -r requirements/base.txt   # API (usa dev.txt para tests, desktop.txt para la GUI)
+
+# Configura un archivo .env con: SECRET_KEY, DEBUG, ALLOWED_HOSTS, DATABASE_URL, ...
 python manage.py migrate
 python manage.py runserver
+```
+
+GUI de escritorio: `pip install -r requirements/desktop.txt` y luego `python -m desktop_ui.main`.
 
 ## Autor
 
